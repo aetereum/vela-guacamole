@@ -1,0 +1,33 @@
+{
+    "ml": {
+        "ventana_lookback": 30,
+        "dias_prediccion": 5,
+        "umbral_confianza": 0.6,
+        "modelos": ["random_forest", "gradient_boosting", "svr"]
+    },
+    "sentimiento": {
+        "fuentes_noticias": [
+            "https://feeds.finance.yahoo.com/rss/2.0/headline"
+        ],
+        "horas_analisis": 24,
+        "umbral_positivo": 0.6,
+        "umbral_negativo": 0.4
+    },
+    "redes_sociales": {
+        "max_tweets": 100,
+        "horas_analisis": 24,
+        "api_keys": {
+            "twitter_consumer_key": "TU_KEY",
+            "twitter_consumer_secret": "TU_SECRET"
+        }
+    },
+    "fusion": {
+        "pesos": {
+            "TECNICA": 0.35,
+            "ML": 0.30,
+            "SENTIMIENTO": 0.20,
+            "REDES_SOCIALES": 0.15
+        },
+        "umbral_decision": 0.1
+    }
+}

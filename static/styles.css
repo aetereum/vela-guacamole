@@ -1,0 +1,109 @@
+/* Estilos para el análisis Fibonacci */
+.fib-info {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+  padding: 0.5rem;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+}
+
+.fib-trend {
+  padding: 0.25rem 0.5rem;
+  border-radius: 3px;
+  font-weight: 500;
+}
+
+.fib-trend.alcista {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.fib-trend.bajista {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+.fib-trend.neutral {
+  background-color: #e2e3e5;
+  color: #383d41;
+}
+
+.fib-quality {
+  padding: 0.25rem 0.5rem;
+  border-radius: 3px;
+  font-weight: 500;
+}
+
+.fib-quality.alta {
+  background-color: #cce5ff;
+  color: #004085;
+}
+
+.fib-quality.media {
+  background-color: #fff3cd;
+  color: #856404;
+}
+
+.fib-quality.baja {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+.operation-levels {
+  margin: 1rem 0;
+  padding: 1rem;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+}
+
+.operation-levels h5 {
+  margin-bottom: 0.5rem;
+  color: #495057;
+}
+
+.fib-levels {
+  margin: 1rem 0;
+  padding: 1rem;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+}
+
+.fib-levels h5 {
+  margin-bottom: 1rem;
+  color: #495057;
+}
+
+.fib-retracements,
+.fib-extensions {
+  margin-bottom: 1rem;
+}
+
+.fib-retracements h6,
+.fib-extensions h6 {
+  color: #6c757d;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+/* Estilos generales para métricas */
+.metric {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.25rem 0;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.metric:last-child {
+  border-bottom: none;
+}
+
+.metric-label {
+  color: #495057;
+  font-weight: 500;
+}
+
+.metric-value {
+  font-weight: 600;
+  color: #212529;
+}

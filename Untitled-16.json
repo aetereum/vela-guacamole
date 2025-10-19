@@ -1,0 +1,37 @@
+{
+    "sistema": {
+        "nombre": "Quantum Trading System Ultimate",
+        "version": "4.0",
+        "modo": "PRODUCCION_24_7"
+    },
+    "capital": {
+        "inicial": 50000,
+        "riesgo_operacion": 0.02,
+        "riesgo_diario": 0.05,
+        "max_operaciones_simultaneas": 10
+    },
+    "mercados": {
+        "US": true,
+        "EUROPA": true,
+        "ASIA": true,
+        "CRYPTO": true,
+        "FOREX": false
+    },
+    "modelos_avanzados": {
+        "reinforcement_learning": true,
+        "deep_learning": true,
+        "datos_alternativos": true,
+        "sentimiento_avanzado": true
+    },
+    "alertas": {
+        "email": true,
+        "telegram": true,
+        "pushover": true,
+        "webhook": false
+    },
+    "ejecucion": {
+        "automatica": false,
+        "confirmacion_manual": true,
+        "horario_24_7": true
+    }
+}

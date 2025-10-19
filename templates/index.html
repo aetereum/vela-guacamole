@@ -1,0 +1,386 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CryptoMaster Panel</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <style>
+    .analysis-section {
+      margin: 15px 0;
+      padding: 15px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+    }
+    .analysis-section h3 {
+      margin-top: 0;
+      color: #333;
+    }
+    .metric {
+      margin: 10px 0;
+    }
+    .metric-label {
+      font-weight: bold;
+      color: #666;
+    }
+    .signal {
+      font-size: 1.2em;
+      font-weight: bold;
+      padding: 10px;
+      border-radius: 5px;
+      margin: 10px 0;
+    }
+    .signal.COMPRAR { background-color: #d4edda; color: #155724; }
+    .signal.VENDER { background-color: #f8d7da; color: #721c24; }
+    .signal.MANTENER { background-color: #fff3cd; color: #856404; }
+    
+    .subsection {
+      margin: 15px 0;
+      padding: 10px;
+      background: #f8f9fa;
+      border-radius: 5px;
+    }
+    
+    .subsection h4 {
+      margin: 0 0 10px 0;
+      color: #495057;
+      font-size: 1.1em;
+    }
+    
+    .explanation {
+      font-style: italic;
+      color: #666;
+      margin: 5px 0;
+    }
+
+    .signal h3 {
+      margin: 0;
+      font-size: 1.3em;
+    }
+    
+    .signal p {
+      margin: 5px 0;
+    }
+
+    /* Estilos para datos en tiempo real */
+    .realtime {
+      border-left: 4px solid #28a745;
+      animation: fadeIn 0.3s ease-in;
+    }
+
+    .realtime-metrics {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .realtime .metric {
+      background: rgba(40, 167, 69, 0.1);
+      padding: 0.75rem;
+      border-radius: 4px;
+      transition: all 0.3s ease;
+    }
+
+    .realtime .metric:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .realtime .metric-value {
+      display: block;
+      font-size: 1.2em;
+      font-weight: bold;
+      color: #28a745;
+      margin-top: 0.25rem;
+    }
+
+    .realtime .timestamp {
+      font-size: 0.9em;
+      color: #666;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes highlight {
+      0% { background-color: rgba(40, 167, 69, 0.3); }
+      100% { background-color: rgba(40, 167, 69, 0.1); }
+    }
+
+    .value-changed {
+      animation: highlight 1s ease;
+    }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <h1>CryptoMaster Panel</h1>
+    <p>Interfaz mínima para pruebas.</p>
+
+    <section class="card">
+      <h2>Análisis por Símbolo</h2>
+      <form id="analyze-form">
+        <input type="text" id="symbol" name="symbol" placeholder="Ej: BTC/USDT" required>
+        <button type="submit">Analizar</button>
+      </form>
+    </section>
+
+    <section class="card">
+      <h2>Análisis Visual</h2>
+      <form id="image-form" enctype="multipart/form-data">
+        <input type="file" id="chart_image" name="chart_image" accept="image/*">
+        <button type="submit">Subir y Analizar</button>
+      </form>
+    </section>
+
+    <section id="results" class="card" style="display:none"></section>
+  </main>
+
+  <script>
+    let currentStream = null;
+    
+    function startRealtimeUpdates(symbol) {
+      // Cerrar stream anterior si existe
+      if (currentStream) {
+        currentStream.close();
+      }
+      
+      currentStream = new EventSource(`/stream/${symbol}`);
+      
+      currentStream.onmessage = function(event) {
+        const data = JSON.parse(event.data);
+        updateRealtimeData(data);
+      };
+      
+      currentStream.onerror = function(error) {
+        console.error('Error en el stream:', error);
+        currentStream.close();
+      };
+    }
+    
+    function updateRealtimeData(data) {
+      if (data.error) {
+        console.error('Error en datos:', data.error);
+        return;
+      }
+      
+      // Actualizar precios y métricas en tiempo real
+      const realtimeSection = document.getElementById('realtime-data');
+      if (!realtimeSection) {
+        const results = document.getElementById('results');
+        const section = document.createElement('div');
+        section.id = 'realtime-data';
+        section.className = 'analysis-section realtime';
+        section.innerHTML = `
+          <h3>Datos en Tiempo Real</h3>
+          <div class="realtime-metrics">
+            <div class="metric">
+              <span class="metric-label">Precio Actual:</span>
+              <span class="metric-value price">${formatCurrency(data.precio)}</span>
+            </div>
+            <div class="metric">
+              <span class="metric-label">Volumen 24h:</span>
+              <span class="metric-value volume">${formatNumber(data.volumen_24h)}</span>
+            </div>
+            <div class="metric">
+              <span class="metric-label">Cambio 24h:</span>
+              <span class="metric-value change">${formatPercentage(data.cambio_24h)}%</span>
+            </div>
+            <div class="metric">
+              <span class="metric-label">Última Actualización:</span>
+              <span class="metric-value timestamp">${new Date(data.timestamp).toLocaleTimeString()}</span>
+            </div>
+          </div>
+        `;
+        results.insertBefore(section, results.firstChild);
+      } else {
+        realtimeSection.querySelector('.price').textContent = formatCurrency(data.precio);
+        realtimeSection.querySelector('.volume').textContent = formatNumber(data.volumen_24h);
+        realtimeSection.querySelector('.change').textContent = `${formatPercentage(data.cambio_24h)}%`;
+        realtimeSection.querySelector('.timestamp').textContent = new Date(data.timestamp).toLocaleTimeString();
+      }
+    }
+
+    function formatNumber(num) {
+      if (num === undefined || num === null) return 'N/A';
+      return new Intl.NumberFormat('es-ES', { 
+        maximumFractionDigits: 2 
+      }).format(num);
+    }
+
+    function formatPercentage(num) {
+      if (num === undefined || num === null) return 'N/A';
+      return new Intl.NumberFormat('es-ES', { 
+        style: 'percent',
+        maximumFractionDigits: 2 
+      }).format(num);
+    }
+
+    function formatCurrency(num) {
+      if (num === undefined || num === null) return 'N/A';
+      return new Intl.NumberFormat('es-ES', { 
+        style: 'currency',
+        currency: 'USD',
+        maximumFractionDigits: 2 
+      }).format(num);
+    }
+
+    function renderMetric(label, value) {
+      if (value === undefined || value === null || value === '') return '';
+      return `<div class="metric">
+        <span class="metric-label">${label}:</span> 
+        <span class="metric-value">${value}</span>
+      </div>`;
+    }
+
+    document.getElementById('analyze-form').addEventListener('submit', async function(e){
+      e.preventDefault();
+      const form = e.target;
+      const resEl = document.getElementById('results');
+      resEl.style.display = 'block';
+      resEl.innerHTML = '<p>Analizando...</p>';
+      try {
+        const r = await fetch('/analyze', { method: 'POST', body: new FormData(form) });
+        const data = await r.json();
+        
+        let html = `
+          <h2>Análisis para ${(data.simbolo || data.datos_mercado?.simbolo || 'Desconocido').toUpperCase()}</h2>
+          <div class="signal ${data.señal_final?.decision || 'NEUTRAL'}">
+            <h3>Señal: ${data.señal_final?.decision || 'NEUTRAL'}</h3>
+            <p>Confianza: ${data.señal_final?.confianza_final ? formatPercentage(data.señal_final.confianza_final) : 'N/A'}</p>
+            <p class="explanation">${data.señal_final?.explicacion || ''}</p>
+          </div>
+
+          ${data.datos_mercado ? `
+          <div class="analysis-section">
+            <h3>Datos de Mercado (CoinMarketCap)</h3>
+            ${data.datos_mercado.precio_actual ? renderMetric('Precio Actual', formatCurrency(data.datos_mercado.precio_actual)) : ''}
+            ${data.datos_mercado.volumen_24h ? renderMetric('Volumen 24h', formatCurrency(data.datos_mercado.volumen_24h)) : ''}
+            ${data.datos_mercado.cambio_24h ? renderMetric('Cambio 24h', formatPercentage(data.datos_mercado.cambio_24h/100)) : ''}
+            ${data.datos_mercado.cambio_7d ? renderMetric('Cambio 7d', formatPercentage(data.datos_mercado.cambio_7d/100)) : ''}
+            ${data.datos_mercado.capitalizacion ? renderMetric('Capitalización', formatCurrency(data.datos_mercado.capitalizacion)) : ''}
+            ${data.datos_mercado.dominancia ? renderMetric('Dominancia', formatPercentage(data.datos_mercado.dominancia/100)) : ''}
+          </div>
+          ` : ''}
+
+          ${data.metricas_globales ? `
+          <div class="analysis-section">
+            <h3>Métricas Globales del Mercado</h3>
+            ${data.metricas_globales.cryptos_activas ? renderMetric('Total Criptomonedas', formatNumber(data.metricas_globales.cryptos_activas)) : ''}
+            ${data.metricas_globales.mercados_activos ? renderMetric('Mercados Activos', formatNumber(data.metricas_globales.mercados_activos)) : ''}
+            ${data.metricas_globales.dominancia_btc ? renderMetric('Dominancia BTC', formatPercentage(data.metricas_globales.dominancia_btc/100)) : ''}
+            ${data.metricas_globales.dominancia_eth ? renderMetric('Dominancia ETH', formatPercentage(data.metricas_globales.dominancia_eth/100)) : ''}
+            ${data.metricas_globales.cap_mercado_total ? renderMetric('Cap. Total Mercado', formatCurrency(data.metricas_globales.cap_mercado_total)) : ''}
+            ${data.metricas_globales.volumen_24h_total ? renderMetric('Volumen Total 24h', formatCurrency(data.metricas_globales.volumen_24h_total)) : ''}
+          </div>
+          ` : ''}
+
+          ${data.analisis_tecnico_ml?.señal_operacion ? `
+          ${data.recomendacion_trading ? `
+          <div class="analysis-section">
+            <h3>Plan de Trading</h3>
+            <div class="subsection">
+              <h4>Análisis Fibonacci y Niveles de Operación</h4>
+              ${data.recomendacion_trading.niveles.tendencia_fib ? 
+                `<div class="fib-info">
+                  <span class="fib-trend ${data.recomendacion_trading.niveles.tendencia_fib}">
+                    Tendencia Fibonacci: ${data.recomendacion_trading.niveles.tendencia_fib}
+                  </span>
+                  <span class="fib-quality ${data.recomendacion_trading.niveles.calidad_senal}">
+                    Calidad de Señal: ${data.recomendacion_trading.niveles.calidad_senal}
+                  </span>
+                </div>` : ''}
+              
+              <div class="operation-levels">
+                <h5>Niveles de Operación Sugeridos:</h5>
+                ${renderMetric('Precio de Entrada', formatCurrency(data.recomendacion_trading.niveles.entrada))}
+                ${renderMetric('Stop Loss', formatCurrency(data.recomendacion_trading.niveles.stop_loss))}
+                ${renderMetric('Take Profit', formatCurrency(data.recomendacion_trading.niveles.take_profit))}
+              </div>
+              
+              ${data.recomendacion_trading.niveles.niveles_fib ? `
+                <div class="fib-levels">
+                  <h5>Niveles Fibonacci:</h5>
+                  <div class="fib-retracements">
+                    <h6>Retrocesos:</h6>
+                    ${Object.entries(data.recomendacion_trading.niveles.niveles_fib.retracements)
+                      .map(([level, price]) => renderMetric(`Nivel ${level}`, formatCurrency(price)))
+                      .join('')}
+                  </div>
+                  <div class="fib-extensions">
+                    <h6>Extensiones:</h6>
+                    ${Object.entries(data.recomendacion_trading.niveles.niveles_fib.extensions)
+                      .map(([level, price]) => renderMetric(`Nivel ${level}`, formatCurrency(price)))
+                      .join('')}
+                  </div>
+                </div>
+              ` : ''}
+            </div>
+            
+            <div class="subsection">
+              <h4>Gestión de Riesgo</h4>
+              ${renderMetric('Tamaño Posición', data.recomendacion_trading.gestion_riesgo.tamano_posicion)}
+              ${renderMetric('Riesgo por Operación', data.recomendacion_trading.gestion_riesgo.riesgo_operacion)}
+              ${renderMetric('Capital en Riesgo', formatCurrency(data.recomendacion_trading.gestion_riesgo.capital_arriesgado))}
+            </div>
+
+            <div class="subsection">
+              <h4>Análisis Detallado</h4>
+              ${renderMetric('Puntuación Técnica', formatPercentage(data.recomendacion_trading.analisis_detallado.puntuacion_tecnica/100))}
+              ${renderMetric('Puntuación Sentimiento', formatPercentage(data.recomendacion_trading.analisis_detallado.puntuacion_sentimiento/100))}
+              ${renderMetric('Puntuación Blockchain', formatPercentage(data.recomendacion_trading.analisis_detallado.puntuacion_blockchain/100))}
+              ${renderMetric('Tendencia', data.recomendacion_trading.analisis_detallado.condicion_mercado.tendencia)}
+              ${renderMetric('Fuerza de Tendencia', formatPercentage(data.recomendacion_trading.analisis_detallado.condicion_mercado.fuerza/100))}
+            </div>
+          </div>
+          ` : ''}
+          ` : ''}
+
+          <div class="analysis-section">
+            <h3>Análisis Técnico</h3>
+            ${renderMetric('RSI', formatNumber(data.analisis_tecnico_ml.indicadores_clave.RSI))}
+            ${renderMetric('MACD', formatNumber(data.analisis_tecnico_ml.indicadores_clave.MACD))}
+            ${renderMetric('Tendencia', data.analisis_tecnico_ml.patrones_identificados.tendencia)}
+            ${renderMetric('Condición Mercado', data.analisis_tecnico_ml.patrones_identificados.condicion_mercado)}
+          </div>
+
+          <div class="analysis-section">
+            <h3>Análisis de Sentimiento</h3>
+            ${renderMetric('Tendencia', data.analisis_sentimiento.sentimiento_combinado.trend)}
+            ${renderMetric('Confianza', formatPercentage(data.analisis_sentimiento.sentimiento_combinado.confidence))}
+            ${renderMetric('Menciones Positivas', formatPercentage(data.analisis_sentimiento.menciones_24h.positivas))}
+            ${renderMetric('Menciones Negativas', formatPercentage(data.analisis_sentimiento.menciones_24h.negativas))}
+          </div>
+
+          <div class="analysis-section">
+            <h3>Datos Blockchain</h3>
+            ${renderMetric('Actividad Institucional', data.analisis_blockchain.institutional_activity)}
+            ${renderMetric('Sentimiento', data.analisis_blockchain.sentiment)}
+            ${renderMetric('Número de Ballenas', data.analisis_blockchain.whale_data.num_whales)}
+            ${renderMetric('Transacciones de Ballenas', data.analisis_blockchain.whale_transactions_count)}
+          </div>
+        `;
+        resEl.innerHTML = html;
+      } catch(err) { 
+        resEl.innerHTML = `<p class="error">Error: ${err}</p>`;
+      }
+    });
+
+    document.getElementById('image-form').addEventListener('submit', async function(e){
+      e.preventDefault();
+      const form = e.target;
+      const resEl = document.getElementById('results');
+      resEl.style.display = 'block';
+      resEl.textContent = 'Analizando imagen...';
+      try{
+        const r = await fetch('/analyze_image', { method: 'POST', body: new FormData(form) });
+        const data = await r.json();
+        resEl.textContent = JSON.stringify(data, null, 2);
+      }catch(err){ resEl.textContent = 'Error: ' + err }
+    });
+  </script>
+</body>
+</html>
